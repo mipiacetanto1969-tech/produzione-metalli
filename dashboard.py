@@ -5,14 +5,20 @@ import gspread
 st.title("📊 Cruscotto Produzione Metalli")
 
 def load_data():
-    # Legge le credenziali dai "Secrets" di Streamlit
-    creds_dict = st.secrets["gcp_service_account"]
-    gc = gspread.service_account_from_dict(creds_dict)
+    # Carichiamo i dati dai secrets
+    secrets = st.secrets["gcp_service_account"]
     
-    # IMPORTANTE: Il nome qui deve essere IDENTICO al nome del file su Google Drive
+    # Creiamo un dizionario e forziamo la conversione dei caratteri '\n'
+    creds_dict = dict(secrets)
+    if "private_key" in creds_dict:
+        creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+    
+    gc = gspread.service_account_from_dict(creds_dict)
     sh = gc.open('Gestione_Produzione_Metalli').sheet1
-    data = sh.get_all_records()
-    return pd.DataFrame(data)
+    return pd.DataFrame(sh.get_all_records())
 
-df = load_data()
-st.dataframe(df)
+try:
+    df = load_data()
+    st.dataframe(df)
+except Exception as e:
+    st.error(f"Errore caricamento: {e}")
