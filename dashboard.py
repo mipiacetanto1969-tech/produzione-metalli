@@ -12,7 +12,8 @@ def load_data():
     creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
     gc = gspread.service_account_from_dict(creds_dict)
     # Assicuriamoci che il nome sia esattamente come lo hai indicato
-    sh = gc.open('Gestione_Produzione_Metalli').sheet1
+   # Sostituisci la riga precedente con questa:
+sh = gc.open('Gestione_Produzione_Metalli').worksheet('REGISTRO')
     data = sh.get_all_records()
     return pd.DataFrame(data)
 
