@@ -19,12 +19,15 @@ mesi_it = {
     'September': 'Settembre', 'October': 'Ottobre', 'November': 'Novembre', 'December': 'Dicembre'
 }
 
+@st.cache_data(ttl=1) # Il TTL a 1 significa che la cache scade dopo 1 secondo, forzando il rilettura
 def load_data():
     creds_dict = dict(st.secrets["gcp_service_account"])
     creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
     gc = gspread.service_account_from_dict(creds_dict)
     sh = gc.open('Gestione_Produzione_Metalli').sheet1
-    return pd.DataFrame(sh.get_all_records())
+    # Usiamo 'get_all_values' invece di 'get_all_records' per vedere cosa c'è davvero
+    data = sh.get_all_records()
+    return pd.DataFrame(data)
 
 df = load_data()
 
