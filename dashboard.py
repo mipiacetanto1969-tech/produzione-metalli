@@ -5,16 +5,17 @@ import gspread
 # 1. CONFIGURAZIONE PAGINA
 st.set_page_config(page_title="Gestione Produzione Metalli", layout="wide")
 
+# 2. DEFINIZIONE FUNZIONE
 @st.cache_data(ttl=1)
 def load_data():
     creds_dict = dict(st.secrets["gcp_service_account"])
     creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
     gc = gspread.service_account_from_dict(creds_dict)
     sh = gc.open('Gestione_Produzione_Metalli').worksheet('REGISTRO')
-    # get_all_records() legge tutto. Se ne legge poche, forse hai dei filtri nel foglio Google?
     data = sh.get_all_records()
     return pd.DataFrame(data)
 
+# 3. INTERFACCIA E CARICAMENTO
 st.title("Gestione Produzione Metalli")
 
 try:
@@ -24,13 +25,13 @@ except Exception as e:
     df = pd.DataFrame()
 
 if df.empty:
-    st.warning("Il foglio è vuoto.")
+    st.warning("Il foglio 'REGISTRO' sembra vuoto o non raggiungibile.")
 else:
     # PULIZIA COLONNE
     df.columns = df.columns.str.strip()
     
     if 'Data' not in df.columns:
-        st.error(f"Colonne trovate: {df.columns.tolist()}. Assicurati che 'Data' sia corretta.")
+        st.error("Errore: colonna 'Data' non trovata nel foglio.")
     else:
         # CONVERSIONE DATA
         df['Data_DT'] = pd.to_datetime(df['Data'], format='%d/%m/%Y', errors='coerce')
@@ -41,31 +42,31 @@ else:
             'September': 'Settembre', 'October': 'Ottobre', 'November': 'Novembre', 'December': 'Dicembre'
         })
         
-        # PULIZIA QUANTITÀ - Versione corretta per il formato "5,00"
-        # 1. Convertiamo in stringa
-        df['Quantità'] = df['Quantità'].astype(str)
-        
-        # 2. Se c'è la virgola, sostituiamo con il punto decimale
-        df['Quantità'] = df['Quantità'].str.replace(',', '.', regex=False)
-        
-        # 3. Ora forziamo la conversione in numero (pd.to_numeric gestirà il 5.00 come 5.0)
+        # PULIZIA QUANTITÀ (FIX PER IL 500)
+        df['Quantità'] = df['Quantità'].astype(str).str.replace(',', '.', regex=False)
         df['Quantità'] = pd.to_numeric(df['Quantità'], errors='coerce')
         
-        # 4. SOLO SE continua a segnare 500, decommenta la riga sotto:
-        # df['Quantità'] = df['Quantità'] / 100
-        
-        # FILTRO FASI
+        # PULIZIA FASI (RIMUOVE RIGHE VUOTE)
         df['Fase Operativa'] = df['Fase Operativa'].str.strip()
-        fasi_reali = ['Metallo Utilizzato KG', 'Verghe KG']
-        df = df[df['Fase Operativa'].isin(fasi_reali)]
+        df = df[df['Fase Operativa'] != ""]
+        df = df.dropna(subset=['Quantità', 'Fase Operativa'])
 
         # VISUALIZZAZIONE
         anni_disponibili = sorted(df['Anno'].dropna().unique(), reverse=True)
         if anni_disponibili:
             anni_selezionati = st.multiselect("Seleziona Anni", anni_disponibili, default=[anni_disponibili[0]])
+            
             if anni_selezionati:
-                tabella = df[df['Anno'].isin(anni_selezionati)].pivot_table(
+                df_filtrato = df[df['Anno'].isin(anni_selezionati)]
+                tabella = df_filtrato.pivot_table(
                     index='Mese', columns='Fase Operativa', values='Quantità', aggfunc='sum'
                 ).fillna(0)
+                
+                # Ordine cronologico
+                ordine_mesi = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 
+                               'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
+                tabella = tabella.reindex([m for m in ordine_mesi if m in tabella.index], fill_value=0)
+                
+                st.subheader(f"Dettaglio Mensile - {', '.join(anni_selezionati)}")
                 st.dataframe(tabella, use_container_width=True)
                 st.bar_chart(tabella)
