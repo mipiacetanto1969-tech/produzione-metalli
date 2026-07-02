@@ -32,7 +32,13 @@ except Exception as e:
 # ci sono spazi tipo "Data " invece di "Data"
 if not df.empty:
     # Pulizia nomi colonne: rimuove spazi vuoti accidentali
-    df.columns = df.columns.str.strip()
+    # SOSTITUISCI IL BLOCCO DI PULIZIA QUANTITÀ CON QUESTO:
+df['Quantità'] = df['Quantità'].astype(str).str.replace(r'[^0-9,]', '', regex=True) # Rimuove simboli strani
+df['Quantità'] = df['Quantità'].str.replace(',', '.') # Trasforma la virgola in punto
+df['Quantità'] = pd.to_numeric(df['Quantità'], errors='coerce') 
+
+# SE CONTINUA A DARTI 500 INVECE DI 5, TOGLI IL COMMENTO (rimuovi #) DALLA RIGA SOTTO:
+# df['Quantità'] = df['Quantità'] / 100
     
     if 'Data' not in df.columns:
         st.error(f"Colonne trovate nel foglio: {df.columns.tolist()}. Assicurati che 'Data' sia tra queste.")
