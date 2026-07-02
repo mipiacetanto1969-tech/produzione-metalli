@@ -11,8 +11,12 @@ def load_data():
     creds_dict = dict(st.secrets["gcp_service_account"])
     creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
     gc = gspread.service_account_from_dict(creds_dict)
-    # Lettura corretta del foglio REGISTRO
     sh = gc.open('Gestione_Produzione_Metalli').worksheet('REGISTRO')
+    
+    # DEBUG: leggiamo i valori grezzi invece di usare get_all_records
+    valori = sh.get_all_values()
+    st.write("Cosa vede il sistema nella prima riga:", valori[0]) # Mostra le intestazioni
+    
     data = sh.get_all_records()
     return pd.DataFrame(data)
 
