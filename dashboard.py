@@ -5,15 +5,14 @@ import gspread
 # 1. CONFIGURAZIONE PAGINA
 st.set_page_config(page_title="Gestione Produzione Metalli", layout="wide")
 
-# 2. DEFINIZIONE FUNZIONE (Deve stare in alto)
+# 2. DEFINIZIONE FUNZIONE
 @st.cache_data(ttl=1) 
 def load_data():
     creds_dict = dict(st.secrets["gcp_service_account"])
     creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
     gc = gspread.service_account_from_dict(creds_dict)
-    # Assicuriamoci che il nome sia esattamente come lo hai indicato
-   # Sostituisci la riga precedente con questa:
-sh = gc.open('Gestione_Produzione_Metalli').worksheet('REGISTRO')
+    # Lettura corretta del foglio REGISTRO
+    sh = gc.open('Gestione_Produzione_Metalli').worksheet('REGISTRO')
     data = sh.get_all_records()
     return pd.DataFrame(data)
 
@@ -28,7 +27,7 @@ except Exception as e:
 
 # 4. LOGICA DI CONTROLLO
 if df.empty or 'Data' not in df.columns:
-    st.warning("Il foglio 'Gestione_Produzione_Metalli' non è stato letto correttamente. Verifica che la prima riga contenga le intestazioni: 'Data', 'Fase Operativa', 'Quantità'.")
+    st.warning("Il foglio 'REGISTRO' non è stato letto correttamente. Verifica le intestazioni: 'Data', 'Fase Operativa', 'Quantità'.")
 else:
     # Dizionario per i mesi
     mesi_it = {
