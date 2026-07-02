@@ -12,8 +12,12 @@ def load_data():
     creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
     gc = gspread.service_account_from_dict(creds_dict)
     sh = gc.open('Gestione_Produzione_Metalli').sheet1
-    data = sh.get_all_records()
-    return pd.DataFrame(data)
+    
+    # Invece di get_all_records, leggiamo tutto e forziamo la prima riga come header
+    data = sh.get_all_values()
+    df = pd.DataFrame(data[1:], columns=data[0])
+    
+    return df
 
 # Dizionario per tradurre i mesi
 mesi_it = {
