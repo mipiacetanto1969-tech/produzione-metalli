@@ -41,11 +41,18 @@ else:
             'September': 'Settembre', 'October': 'Ottobre', 'November': 'Novembre', 'December': 'Dicembre'
         })
         
-        # PULIZIA QUANTITÀ (FIX PER IL 500/5)
-        # Convertiamo in stringa, togliamo i punti (separatori migliaia), mettiamo il punto al posto della virgola
-        df['Quantità'] = df['Quantità'].astype(str).str.replace('.', '', regex=False)
+        # PULIZIA QUANTITÀ - Versione corretta per il formato "5,00"
+        # 1. Convertiamo in stringa
+        df['Quantità'] = df['Quantità'].astype(str)
+        
+        # 2. Se c'è la virgola, sostituiamo con il punto decimale
         df['Quantità'] = df['Quantità'].str.replace(',', '.', regex=False)
+        
+        # 3. Ora forziamo la conversione in numero (pd.to_numeric gestirà il 5.00 come 5.0)
         df['Quantità'] = pd.to_numeric(df['Quantità'], errors='coerce')
+        
+        # 4. SOLO SE continua a segnare 500, decommenta la riga sotto:
+        # df['Quantità'] = df['Quantità'] / 100
         
         # FILTRO FASI
         df['Fase Operativa'] = df['Fase Operativa'].str.strip()
