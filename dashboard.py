@@ -37,21 +37,17 @@ df['Anno'] = df['Data_DT'].dt.year.astype(str)
 # Traduciamo il mese
 df['Mese'] = df['Data_DT'].dt.month_name().map(mesi_it)
 
-# Sostituisci la parte della conversione della Quantità con questo blocco più "aggressivo":
+# Sostituisci la conversione della Quantità con questo blocco:
 
-def pulisci_quantita(valore):
-    try:
-        # Se il valore è già un numero, restituiscilo
-        if isinstance(valore, (int, float)):
-            return float(valore)
-        # Se è una stringa, sostituisci virgola con punto
-        s = str(valore).replace(',', '.')
-        return float(s)
-    except:
-        return 0.0
+# 1. Convertiamo in stringa, togliamo i punti (eventuali separatori di migliaia), 
+#    poi sostituiamo la virgola con il punto decimale.
+df['Quantità'] = df['Quantità'].astype(str).str.replace('.', '', regex=False).str.replace(',', '.', regex=False)
 
-# Applichiamo la pulizia
-df['Quantità'] = df['Quantità'].apply(pulisci_quantita) 
+# 2. Ora convertiamo in numero decimale (float)
+df['Quantità'] = pd.to_numeric(df['Quantità'], errors='coerce')
+
+# 3. Se per errore fosse ancora moltiplicato per 100, aggiungi questa riga:
+# df['Quantità'] = df['Quantità'] / 100
 
 # Filtro per Anno
 anni_disponibili = sorted(df['Anno'].unique())
