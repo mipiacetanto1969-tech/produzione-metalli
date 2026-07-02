@@ -37,18 +37,17 @@ df['Anno'] = df['Data_DT'].dt.year.astype(str)
 # Traduciamo il mese
 df['Mese'] = df['Data_DT'].dt.month_name().map(mesi_it)
 
-# Sostituisci la conversione della Quantità con questo blocco:
+# Sostituisci la parte della pulizia della Quantità con questo:
 
-# 1. Convertiamo in stringa, togliamo i punti (eventuali separatori di migliaia), 
-#    poi sostituiamo la virgola con il punto decimale.
-df['Quantità'] = df['Quantità'].astype(str).str.replace('.', '', regex=False).str.replace(',', '.', regex=False)
+# 1. Convertiamo in stringa e puliamo da simboli strani (spazi, euro, ecc.)
+df['Quantità'] = df['Quantità'].astype(str).str.replace(r'[^\d]', '', regex=True)
 
-# 2. Ora convertiamo in numero decimale (float)
+# 2. Convertiamo in numero intero
 df['Quantità'] = pd.to_numeric(df['Quantità'], errors='coerce')
 
-# 3. Se per errore fosse ancora moltiplicato per 100, aggiungi questa riga:
-# df['Quantità'] = df['Quantità'] / 100
-
+# 3. DIVIDIAMO PER 100: Questa è la correzione definitiva per il tuo caso.
+# Se il foglio invia "600" per "6,00", la divisione riporta il dato al valore corretto.
+df['Quantità'] = df['Quantità'] / 100
 # Filtro per Anno
 anni_disponibili = sorted(df['Anno'].unique())
 anni_selezionati = st.multiselect("Seleziona gli Anni da confrontare", anni_disponibili, default=[anni_disponibili[-1]])
