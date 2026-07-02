@@ -5,10 +5,18 @@ import gspread
 # 4. Interfaccia Streamlit
 st.title("Gestione Produzione Metalli")
 
-# Controlliamo se ci sono dati
+# Carichiamo i dati all'interno del controllo
+try:
+    df = load_data()
+except Exception as e:
+    st.error(f"Errore nel caricamento dati: {e}")
+    df = pd.DataFrame() # Creiamo un dataframe vuoto per evitare il crash
+
+# Ora facciamo il controllo su df
 if df.empty or 'Anno' not in df.columns:
-    st.error("Il foglio è vuoto o non contiene dati validi. Controlla il file Google Sheets!")
+    st.warning("Il foglio è vuoto o mancano le intestazioni corrette (Data, Fase Operativa, Quantità).")
 else:
+    # ... (tutto il resto del tuo codice che avevamo scritto)
     anni_disponibili = sorted(df['Anno'].unique(), reverse=True)
     
     # Gestione sicura: se ci sono anni, usa il primo, altrimenti lascia vuoto
