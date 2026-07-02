@@ -2,8 +2,16 @@ import streamlit as st
 import pandas as pd
 import gspread
 
-st.title("📊 Gestione Produzione Metalli")
+# Usiamo una cache che si aggiorna ogni volta che carichiamo i dati
+@st.cache_data(ttl=60) 
+def load_data():
+    creds_dict = dict(st.secrets["gcp_service_account"])
+    creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+    gc = gspread.service_account_from_dict(creds_dict)
+    sh = gc.open('Gestione_Produzione_Metalli').sheet1
+    return pd.DataFrame(sh.get_all_records())
 
+# ... (il resto del codice che avevamo scritto prima con la traduzione dei mesi) ...
 # Dizionario per tradurre i mesi
 mesi_it = {
     'January': 'Gennaio', 'February': 'Febbraio', 'March': 'Marzo', 'April': 'Aprile',
