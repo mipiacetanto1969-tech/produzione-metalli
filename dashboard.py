@@ -2,23 +2,43 @@ import streamlit as st
 import pandas as pd
 import gspread
 
-# Configurazione della pagina
-st.set_page_config(page_title="Gestione Produzione Metalli", layout="wide")
+# 4. Interfaccia Streamlit
+st.title("Gestione Produzione Metalli")
 
-# Cache per caricamento dati
-@st.cache_data(ttl=1) 
-def load_data():
-    creds_dict = dict(st.secrets["gcp_service_account"])
-    creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-    gc = gspread.service_account_from_dict(creds_dict)
-    sh = gc.open('Gestione_Produzione_Metalli').sheet1
+# Controlliamo se ci sono dati
+if df.empty or 'Anno' not in df.columns:
+    st.error("Il foglio è vuoto o non contiene dati validi. Controlla il file Google Sheets!")
+else:
+    anni_disponibili = sorted(df['Anno'].unique(), reverse=True)
     
-    # Invece di get_all_records, leggiamo tutto e forziamo la prima riga come header
-    data = sh.get_all_values()
-    df = pd.DataFrame(data[1:], columns=data[0])
+    # Gestione sicura: se ci sono anni, usa il primo, altrimenti lascia vuoto
+    default_anni = [anni_disponibili[0]] if anni_disponibili else []
     
-    return df
+    anni_selezionati = st.multiselect("Seleziona gli Anni da confrontare", anni_disponibili, default=default_anni)
 
+    if anni_selezionati:
+        df_filtrato = df[df['Anno'].isin(anni_selezionati)]
+        
+        # Creazione tabella pivot
+        tabella = df_filtrato.pivot_table(
+            index=['Mese'], 
+            columns='Fase Operativa', 
+            values='Quantità', 
+            aggfunc='sum'
+        ).fillna(0)
+        
+        # Riordino dei mesi
+        ordine_mesi = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 
+                       'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
+        # Manteniamo solo i mesi presenti nei dati per evitare errori
+        ordine_mesi = [m for m in ordine_mesi if m in tabella.index]
+        tabella = tabella.reindex(ordine_mesi, fill_value=0)
+        
+        st.subheader(f"Dettaglio Mensile - {', '.join(anni_selezionati)}")
+        st.dataframe(tabella, use_container_width=True)
+        
+        st.subheader("📊 Grafico")
+        st.bar_chart(tabella)
 # Dizionario per tradurre i mesi
 mesi_it = {
     'January': 'Gennaio', 'February': 'Febbraio', 'March': 'Marzo', 'April': 'Aprile',
