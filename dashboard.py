@@ -51,22 +51,24 @@ else:
         df = df[df['Fase Operativa'] != ""]
         df = df.dropna(subset=['Quantità', 'Fase Operativa'])
 
-        # VISUALIZZAZIONE
+       # VISUALIZZAZIONE
         anni_disponibili = sorted(df['Anno'].dropna().unique(), reverse=True)
         if anni_disponibili:
             anni_selezionati = st.multiselect("Seleziona Anni", anni_disponibili, default=[anni_disponibili[0]])
             
             if anni_selezionati:
                 df_filtrato = df[df['Anno'].isin(anni_selezionati)]
+                
+                # Questa pivot mette le Fasi sulle righe e gli Anni sulle colonne
                 tabella = df_filtrato.pivot_table(
-                    index='Mese', columns='Fase Operativa', values='Quantità', aggfunc='sum'
+                    index='Fase Operativa', 
+                    columns='Anno', 
+                    values='Quantità', 
+                    aggfunc='sum'
                 ).fillna(0)
                 
-                # Ordine cronologico
-                ordine_mesi = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 
-                               'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
-                tabella = tabella.reindex([m for m in ordine_mesi if m in tabella.index], fill_value=0)
-                
-                st.subheader(f"Dettaglio Mensile - {', '.join(anni_selezionati)}")
+                st.subheader(f"Totali per Fase - Anni: {', '.join(anni_selezionati)}")
                 st.dataframe(tabella, use_container_width=True)
+                
+                # Il grafico ora mostrerà le barre raggruppate per anno
                 st.bar_chart(tabella)
