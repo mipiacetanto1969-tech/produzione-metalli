@@ -51,7 +51,7 @@ else:
         df = df[df['Fase Operativa'] != ""]
         df = df.dropna(subset=['Quantità', 'Fase Operativa'])
 
-       # VISUALIZZAZIONE
+      # VISUALIZZAZIONE
         anni_disponibili = sorted(df['Anno'].dropna().unique(), reverse=True)
         if anni_disponibili:
             anni_selezionati = st.multiselect("Seleziona Anni", anni_disponibili, default=[anni_disponibili[0]])
@@ -59,16 +59,25 @@ else:
             if anni_selezionati:
                 df_filtrato = df[df['Anno'].isin(anni_selezionati)]
                 
-                # Questa pivot mette le Fasi sulle righe e gli Anni sulle colonne
-                tabella = df_filtrato.pivot_table(
-                    index='Fase Operativa', 
-                    columns='Anno', 
-                    values='Quantità', 
-                    aggfunc='sum'
-                ).fillna(0)
+                # SE SELEZIONI SOLO 1 ANNO: Mostra i mesi
+                if len(anni_selezionati) == 1:
+                    tabella = df_filtrato.pivot_table(
+                        index='Mese', columns='Fase Operativa', values='Quantità', aggfunc='sum'
+                    ).fillna(0)
+                    
+                    # Ordine cronologico mesi
+                    ordine_mesi = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 
+                                   'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
+                    tabella = tabella.reindex([m for m in ordine_mesi if m in tabella.index], fill_value=0)
+                    titolo = f"Dettaglio Mensile - {anni_selezionati[0]}"
                 
-                st.subheader(f"Totali per Fase - Anni: {', '.join(anni_selezionati)}")
+                # SE SELEZIONI PIÙ ANNI: Mostra la comparazione totale
+                else:
+                    tabella = df_filtrato.pivot_table(
+                        index='Fase Operativa', columns='Anno', values='Quantità', aggfunc='sum'
+                    ).fillna(0)
+                    titolo = f"Comparazione Totale - Anni: {', '.join(anni_selezionati)}"
+                
+                st.subheader(titolo)
                 st.dataframe(tabella, use_container_width=True)
-                
-                # Il grafico ora mostrerà le barre raggruppate per anno
                 st.bar_chart(tabella)
